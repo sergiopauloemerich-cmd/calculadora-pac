@@ -1,0 +1,18 @@
+DOSAGEM DE PAC — PWA
+
+Conteúdo:
+- index.html: aplicativo
+- manifest.json: configuração para instalação
+- sw.js: funcionamento offline após a primeira abertura
+- icons/icon.svg: ícone
+
+INSTALAÇÃO NO ANDROID
+1. Hospede esta pasta em um endereço HTTPS (por exemplo, GitHub Pages ou Netlify).
+2. Abra o endereço no Google Chrome do celular.
+3. No menu ⋮, escolha “Instalar app” ou “Adicionar à tela inicial”.
+4. O ícone ficará na tela inicial e abrirá como aplicativo.
+
+IMPORTANTE
+- Abrir o arquivo index.html diretamente pelo gerenciador de arquivos não permite a instalação PWA completa.
+- O app funciona offline depois que for aberto uma primeira vez e os arquivos forem armazenados em cache.
+- A fórmula mantém o cálculo anterior, aplicando automaticamente o fator 2,5.

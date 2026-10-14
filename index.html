@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#075985">
+  <meta name="description" content="Calculadora de dosagem de PAC para tratamento de água.">
+  <title>Dosagem de PAC</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
+      min-height: 100vh; font-family: Arial, sans-serif; background: #f0f4f8; color: #1f2937;
+      display: flex; justify-content: center; align-items: flex-start;
+    }
+    .card {
+      width: 100%; max-width: 440px; background: #fff; padding: 22px;
+      border-radius: 12px; box-shadow: 0 4px 18px rgba(0,0,0,.10); margin-top: 8px;
+    }
+    h1 { margin: 0 0 22px; font-size: 23px; text-align: center; color: #075985; }
+    label { display: block; margin: 14px 0 6px; font-weight: 700; font-size: 14px; }
+    input {
+      width: 100%; padding: 12px; font-size: 17px; border: 1px solid #cbd5e1;
+      border-radius: 7px; background: white; color: #111827;
+    }
+    input:focus { outline: 2px solid #7dd3fc; border-color: #0284c7; }
+    button {
+      width: 100%; margin-top: 18px; padding: 13px; border: 0; border-radius: 7px;
+      background: #0284c7; color: white; font-size: 16px; font-weight: 700; cursor: pointer;
+    }
+    button:active { background: #0369a1; }
+    .result {
+      display: none; margin-top: 18px; padding: 16px; border-radius: 8px;
+      background: #ecfdf5; border: 1px solid #86efac;
+    }
+    .main-result { font-size: 29px; font-weight: 700; color: #166534; text-align: center; margin: 8px 0; }
+    .secondary { text-align: center; color: #166534; font-size: 17px; }
+    .error { display: none; margin-top: 12px; color: #b91c1c; font-size: 14px; }
+    .install {
+      display: none; margin-top: 12px; padding: 10px; border: 1px solid #bae6fd;
+      background: #f0f9ff; border-radius: 8px; color: #075985; font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+<main class="card">
+  <h1>Dosagem de PAC</h1>
+
+  <label for="flow">Vazão da água (L/s)</label>
+  <input id="flow" type="number" min="0.01" step="any" inputmode="decimal" placeholder="Ex.: 12">
+
+  <label for="density">Densidade do PAC (g/L)</label>
+  <input id="density" type="number" min="0.01" step="any" inputmode="decimal" placeholder="Ex.: 1200">
+
+  <label for="turbidity">Turbidez (NTU)</label>
+  <input id="turbidity" type="number" min="0.01" step="any" inputmode="decimal" placeholder="Ex.: 30">
+
+  <button type="button" id="calculate">Calcular dosagem</button>
+  <div class="error" id="error" role="alert"></div>
+
+  <section class="result" id="result" aria-live="polite">
+    <div class="main-result" id="lh">— L/h</div>
+    <div class="secondary" id="mlmin">— mL/min</div>
+  </section>
+
+  <div class="install" id="installHelp">Para instalar: abra o menu do Chrome (⋮) e escolha “Instalar app” ou “Adicionar à tela inicial”.</div>
+</main>
+<script>
+function calculate() {
+  const flow = Number(document.getElementById('flow').value);
+  const density = Number(document.getElementById('density').value);
+  const turbidity = Number(document.getElementById('turbidity').value);
+  const error = document.getElementById('error');
+  const result = document.getElementById('result');
+
+  error.style.display = 'none';
+  result.style.display = 'none';
+
+  if (!(flow > 0) || !(density > 0) || !(turbidity > 0) ||
+      !Number.isFinite(flow) || !Number.isFinite(density) || !Number.isFinite(turbidity)) {
+    error.textContent = 'Informe valores numéricos maiores que zero nos três campos.';
+    error.style.display = 'block';
+    return;
+  }
+
+  const m = (595 - 209) / (1350 - 1125);
+  const b = 595 - m * 1350;
+  const concentration = m * density + b;
+
+  if (!(concentration > 0) || !Number.isFinite(concentration)) {
+    error.textContent = 'Confira a densidade informada.';
+    error.style.display = 'block';
+    return;
+  }
+
+  const originalMlMin = (((flow * 10) * 7.1996 * Math.pow(turbidity, 0.355)) / concentration) * 6;
+  const adjustedMlMin = originalMlMin * 2.5;
+  const adjustedLh = adjustedMlMin * 60 / 1000;
+
+  if (![adjustedMlMin, adjustedLh].every(Number.isFinite)) {
+    error.textContent = 'Não foi possível calcular. Confira os valores informados.';
+    error.style.display = 'block';
+    return;
+  }
+
+  document.getElementById('lh').textContent = adjustedLh.toFixed(2) + ' L/h';
+  document.getElementById('mlmin').textContent = adjustedMlMin.toFixed(2) + ' mL/min';
+  result.style.display = 'block';
+}
+document.getElementById('calculate').addEventListener('click', calculate);
+document.querySelectorAll('input').forEach(input => {
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') calculate(); });
+});
+
+let installPrompt;
+window.addEventListener('beforeinstallprompt', (event) => {
+  event.preventDefault();
+  installPrompt = event;
+  const help = document.getElementById('installHelp');
+  help.style.display = 'block';
+  help.textContent = 'Este app pode ser instalado pelo menu do navegador. Abra o menu (⋮) e escolha “Instalar app”.';
+});
+
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
